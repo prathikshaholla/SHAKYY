@@ -278,25 +278,26 @@ export async function sendWhatsAppSOS(shakeIntensity = null) {
     console.error("❌ Failed to send to server:", err);
   }
 
-  // Send to all emergency contacts via WhatsApp
+  // Send to all emergency contacts via WhatsApp simultaneously
   const encodedMessage = encodeURIComponent(message);
   
-  statusEl.textContent = `📤 Sending SOS to ${contacts.length} contact(s)...`;
+  statusEl.textContent = `📤 Sending SOS to ${contacts.length} contact(s) with your location...`;
   
+  // Send to all contacts at the same time with minimal delay
   contacts.forEach((contact, index) => {
     setTimeout(() => {
       const phoneNumber = contact.phone.replace(/[^0-9]/g, "");
       const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
       window.open(whatsappURL, "_blank");
-      console.log(`✅ SOS sent to ${contact.name} (${contact.phone})`);
-    }, index * 1000); // Stagger by 1 second to avoid blocking
+      console.log(`✅ SOS with location sent to ${contact.name} (${contact.phone})`);
+    }, index * 200); // Reduced to 200ms for faster simultaneous sending
   });
 
-  statusEl.textContent = `✅ SOS sent to ${contacts.length} contact(s) via WhatsApp!`;
+  statusEl.textContent = `✅ SOS with location sent to ${contacts.length} contact(s) via WhatsApp!`;
   
   // Show alert
   setTimeout(() => {
-    alert(`🚨 Emergency SOS sent to ${contacts.length} contact(s)!\n\nContacts notified:\n${contacts.map(c => `• ${c.name}`).join('\n')}`);
+    alert(`🚨 Emergency SOS sent to ${contacts.length} contact(s)!\n\n📍 Location included in all messages\n\nContacts notified:\n${contacts.map(c => `• ${c.name}`).join('\n')}`);
   }, 500);
 }
 
