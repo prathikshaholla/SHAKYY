@@ -15,6 +15,7 @@ app.use(express.json());
 app.use(express.static(__dirname)); // serves index.html, shake.js, sos.js
 
 const sosFile = path.join(__dirname, "sos_log.json");
+const shakeIntensityFile = path.join(__dirname, "shake_intensity_log.json");
 
 // ✅ Helper function to save SOS logs
 function saveData(filename, data) {
@@ -24,6 +25,34 @@ function saveData(filename, data) {
   existing.push(data);
   fs.writeFileSync(filename, JSON.stringify(existing, null, 2));
 }
+
+// ✅ Helper function to save shake intensity data
+function saveShakeIntensity(filename, data) {
+  const existing = fs.existsSync(filename)
+    ? JSON.parse(fs.readFileSync(filename, "utf8"))
+    : [];
+  existing.push(data);
+  // Keep only last 1000 entries to prevent file from getting too large
+  if (existing.length > 1000) {
+    existing.shift();
+  }
+  fs.writeFileSync(filename, JSON.stringify(existing, null, 2));
+}
+
+// ✅ Endpoint to receive shake intensity data
+app.post("/shake-intensity", (req, res) => {
+  const { intensity, acceleration, timestamp } = req.body;
+
+  const shakeData = {
+    intensity: intensity || "0",
+    acceleration: acceleration || { x: "0", y: "0", z: "0" },
+    timestamp: timestamp || new Date().toISOString(),
+  };
+
+  saveShakeIntensity(shakeIntensityFile, shakeData);
+
+  res.json({ status: "Shake intensity logged successfully" });
+});
 
 // ✅ Endpoint to receive SOS alerts
 app.post("/sos", (req, res) => {
@@ -48,6 +77,14 @@ app.get("/download-sos", (req, res) => {
     return res.status(404).json({ error: "No SOS logs found" });
   }
   res.download(sosFile, "sos_log.json");
+});
+
+// ✅ Endpoint to download shake intensity logs
+app.get("/download-shake-intensity", (req, res) => {
+  if (!fs.existsSync(shakeIntensityFile)) {
+    return res.status(404).json({ error: "No shake intensity logs found" });
+  }
+  res.download(shakeIntensityFile, "shake_intensity_log.json");
 });
 
 app.listen(PORT, () => {

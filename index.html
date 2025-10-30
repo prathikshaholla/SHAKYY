@@ -192,7 +192,22 @@
   <div class="container">
     <h1>🚨 Emergency SOS System</h1>
     
-    <div class="card">
+    <div class="card" id="loginCard">
+      <h2 style="margin-bottom: 15px; font-size: 20px;">🔐 User Details</h2>
+      <input type="text" id="loginName" placeholder="Your Full Name (Optional)">
+      <input type="tel" id="loginPhone" placeholder="Your Phone Number (Optional)">
+      
+      <h3 style="margin: 20px 0 10px 0; font-size: 16px;">📞 Additional Emergency Contacts</h3>
+      <input type="text" id="customContactName" placeholder="Contact Name (e.g., Friend, Neighbor)">
+      <input type="tel" id="customContactPhone" placeholder="Phone Number (+919876543210)">
+      <button id="addCustomContact" class="btn-success">Add Emergency Contact</button>
+      
+      <div id="customContactsList" class="contacts-list"></div>
+      
+      <button id="continueBtn" class="btn-success" style="margin-top: 20px;">Continue to SOS System</button>
+    </div>
+
+    <div class="card hidden" id="mainCard">
       <h2 style="margin-bottom: 15px; font-size: 20px;">👤 Your Profile</h2>
       <input type="text" id="userName" placeholder="Your Full Name*">
       <input type="text" id="userBloodType" placeholder="Blood Type (Optional)">
@@ -202,13 +217,13 @@
       <div class="profile-status" id="profileStatus">⚠️ Profile not configured</div>
     </div>
 
-    <div class="card">
+    <div class="card hidden" id="motionCard">
       <h2 style="margin-bottom: 15px; font-size: 20px;">📱 Motion Detection</h2>
       <button id="sendSOS">Send SOS Manually</button>
       <div id="status">🔄 Initializing shake detection...</div>
     </div>
 
-    <div class="card">
+    <div class="card hidden" id="contactsCard">
       <h2 style="margin-bottom: 15px; font-size: 20px;">👥 Emergency Contacts</h2>
       <input type="text" id="contactName" placeholder="Contact Name (e.g., Mom, Dad)">
       <input type="tel" id="contactPhone" placeholder="Phone Number (+919876543210)">

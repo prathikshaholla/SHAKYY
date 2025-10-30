@@ -3,6 +3,7 @@ import { DEFAULT_CONTACTS, SOS_SETTINGS, USER_PROFILE } from "./contacts-config.
 
 let countdownTimer = null;
 let contacts = [];
+let customEmergencyContacts = []; // Additional contacts from login page
 let userProfile = {};
 
 // Load user profile
@@ -23,6 +24,78 @@ function loadUserProfile() {
   
   renderProfile();
 }
+
+// Load custom emergency contacts
+function loadCustomEmergencyContacts() {
+  const saved = localStorage.getItem("customEmergencyContacts");
+  if (saved) {
+    customEmergencyContacts = JSON.parse(saved);
+    renderCustomContacts();
+  }
+}
+
+// Save custom emergency contacts
+function saveCustomEmergencyContacts() {
+  localStorage.setItem("customEmergencyContacts", JSON.stringify(customEmergencyContacts));
+  renderCustomContacts();
+}
+
+// Render custom emergency contacts on login page
+function renderCustomContacts() {
+  const listEl = document.getElementById("customContactsList");
+  if (!listEl) return;
+  
+  if (customEmergencyContacts.length === 0) {
+    listEl.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); padding: 10px; font-size: 13px;">No additional contacts added yet</p>';
+    return;
+  }
+
+  listEl.innerHTML = customEmergencyContacts.map((contact, index) => `
+    <div class="contact-item">
+      <div class="contact-info">
+        <div class="contact-name">${contact.name}</div>
+        <div class="contact-phone">${contact.phone}</div>
+      </div>
+      <button class="btn-remove" onclick="window.removeCustomContact(${index})">Remove</button>
+    </div>
+  `).join("");
+}
+
+// Add custom emergency contact
+window.addCustomContact = function() {
+  const nameInput = document.getElementById("customContactName");
+  const phoneInput = document.getElementById("customContactPhone");
+  
+  const name = nameInput.value.trim();
+  const phone = phoneInput.value.trim();
+  
+  if (!name || !phone) {
+    alert("Please enter both name and phone number");
+    return;
+  }
+  
+  // Basic phone validation
+  if (!phone.startsWith("+")) {
+    alert("Please include country code (e.g., +919876543210)");
+    return;
+  }
+  
+  customEmergencyContacts.push({ name, phone });
+  saveCustomEmergencyContacts();
+  
+  nameInput.value = "";
+  phoneInput.value = "";
+  
+  alert(`✅ ${name} added as additional emergency contact`);
+};
+
+// Remove custom emergency contact
+window.removeCustomContact = function(index) {
+  if (confirm(`Remove ${customEmergencyContacts[index].name} from additional emergency contacts?`)) {
+    customEmergencyContacts.splice(index, 1);
+    saveCustomEmergencyContacts();
+  }
+};
 
 // Save user profile
 function saveUserProfile() {
@@ -161,7 +234,10 @@ window.removeContact = function(index) {
 
 // Start countdown
 export function startSOSCountdown() {
-  if (contacts.length === 0) {
+  // Combine all contacts (default + custom emergency contacts)
+  const allContacts = [...contacts, ...customEmergencyContacts];
+  
+  if (allContacts.length === 0) {
     alert("⚠️ No emergency contacts configured! Please add contacts first.");
     return;
   }
@@ -208,7 +284,7 @@ function cancelCountdown() {
 }
 
 // Send SOS to all contacts
-export async function sendWhatsAppSOS() {
+export async function sendWhatsAppSOS(shakeIntensity = null) {
   console.log("📡 SOS triggered!");
 
   const statusEl = document.getElementById("status");
@@ -242,6 +318,10 @@ export async function sendWhatsAppSOS() {
   message += `📅 Time: ${time}\n`;
   message += `📍 Location: ${mapsLink}\n`;
   
+  if (shakeIntensity) {
+    message += `⚠️ Shake Intensity: ${shakeIntensity.toFixed(2)}\n`;
+  }
+  
   if (userProfile.bloodType) {
     message += `🩸 Blood Type: ${userProfile.bloodType}\n`;
   }
@@ -254,6 +334,9 @@ export async function sendWhatsAppSOS() {
   
   message += `\nThis is an automated emergency alert. Please respond immediately.`;
 
+  // Combine all contacts (default + custom emergency contacts)
+  const allContacts = [...contacts, ...customEmergencyContacts];
+  
   // Log to server
   try {
     await fetch("http://localhost:3000/sos", {
@@ -265,7 +348,8 @@ export async function sendWhatsAppSOS() {
         triggeredBy: "Shake Detection",
         location,
         userProfile,
-        contactsNotified: contacts.length
+        intensity: shakeIntensity ? shakeIntensity.toFixed(2) : "N/A",
+        contactsNotified: allContacts.length
       }),
     });
     console.log("✅ SOS logged on server");
@@ -276,9 +360,9 @@ export async function sendWhatsAppSOS() {
   // Send to all emergency contacts via WhatsApp
   const encodedMessage = encodeURIComponent(message);
   
-  statusEl.textContent = `📤 Sending SOS to ${contacts.length} contact(s)...`;
+  statusEl.textContent = `📤 Sending SOS to ${allContacts.length} contact(s)...`;
   
-  contacts.forEach((contact, index) => {
+  allContacts.forEach((contact, index) => {
     setTimeout(() => {
       const phoneNumber = contact.phone.replace(/[^0-9]/g, "");
       const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
@@ -287,11 +371,11 @@ export async function sendWhatsAppSOS() {
     }, index * 1000); // Stagger by 1 second to avoid blocking
   });
 
-  statusEl.textContent = `✅ SOS sent to ${contacts.length} contact(s) via WhatsApp!`;
+  statusEl.textContent = `✅ SOS sent to ${allContacts.length} contact(s) via WhatsApp!`;
   
   // Show alert
   setTimeout(() => {
-    alert(`🚨 Emergency SOS sent to ${contacts.length} contact(s)!\n\nContacts notified:\n${contacts.map(c => `• ${c.name}`).join('\n')}`);
+    alert(`🚨 Emergency SOS sent to ${allContacts.length} contact(s)!\n\nContacts notified:\n${allContacts.map(c => `• ${c.name}`).join('\n')}`);
   }, 500);
 }
 
@@ -299,6 +383,7 @@ export async function sendWhatsAppSOS() {
 document.addEventListener("DOMContentLoaded", () => {
   loadContacts();
   loadUserProfile();
+  loadCustomEmergencyContacts();
   
   // Reset to default contacts function (accessible via console or button)
   window.resetToDefaultContacts = function() {
@@ -317,6 +402,50 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("✅ Profile reset to defaults");
     }
   };
+  
+  // Login page handlers
+  const loginCard = document.getElementById("loginCard");
+  const mainCard = document.getElementById("mainCard");
+  const motionCard = document.getElementById("motionCard");
+  const contactsCard = document.getElementById("contactsCard");
+  const continueBtn = document.getElementById("continueBtn");
+  
+  if (continueBtn) {
+    continueBtn.addEventListener("click", () => {
+      // User details are NOT saved (as requested)
+      // They're only used temporarily during the session
+      const loginName = document.getElementById("loginName")?.value.trim() || "";
+      const loginPhone = document.getElementById("loginPhone")?.value.trim() || "";
+      
+      // Optionally set default profile name if user provided it
+      if (loginName && !userProfile.name) {
+        userProfile.name = loginName;
+        saveUserProfile();
+      }
+      
+      // Hide login card, show main cards
+      if (loginCard) loginCard.classList.add("hidden");
+      if (mainCard) mainCard.classList.remove("hidden");
+      if (motionCard) motionCard.classList.remove("hidden");
+      if (contactsCard) contactsCard.classList.remove("hidden");
+    });
+  }
+  
+  // Add custom contact button
+  const addCustomContactBtn = document.getElementById("addCustomContact");
+  if (addCustomContactBtn) {
+    addCustomContactBtn.addEventListener("click", window.addCustomContact);
+  }
+  
+  // Enter key to add custom contact
+  const customContactPhone = document.getElementById("customContactPhone");
+  if (customContactPhone) {
+    customContactPhone.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        window.addCustomContact();
+      }
+    });
+  }
   
   document.getElementById("addContact").addEventListener("click", window.addContact);
   document.getElementById("saveProfile").addEventListener("click", window.saveProfile);
