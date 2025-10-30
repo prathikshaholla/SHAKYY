@@ -286,24 +286,22 @@ export async function sendWhatsAppSOS(shakeIntensity = null) {
   
   statusEl.textContent = `📤 Sending SOS to ${contacts.length} contact(s) with your location...`;
   
-  // Send to all contacts at the same time with minimal delay
-  contacts.forEach((contact, index) => {
-    setTimeout(() => {
-      try {
-        const phoneNumber = contact.phone.replace(/[^0-9]/g, "");
-        const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-        console.log(`Opening WhatsApp for ${contact.name}: ${whatsappURL}`);
-        const newWindow = window.open(whatsappURL, "_blank");
-        if (!newWindow) {
-          console.error(`❌ Failed to open WhatsApp for ${contact.name} - popup blocked?`);
-          alert(`⚠️ Cannot open WhatsApp for ${contact.name}. Please check browser popup settings.`);
-        } else {
-          console.log(`✅ SOS with location sent to ${contact.name} (${contact.phone})`);
-        }
-      } catch (err) {
-        console.error(`❌ Error sending to ${contact.name}:`, err);
+  // Send to ALL contacts at the SAME time (no delays)
+  contacts.forEach((contact) => {
+    try {
+      const phoneNumber = contact.phone.replace(/[^0-9]/g, "");
+      const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+      console.log(`Opening WhatsApp for ${contact.name}: ${whatsappURL}`);
+      const newWindow = window.open(whatsappURL, "_blank");
+      if (!newWindow) {
+        console.error(`❌ Failed to open WhatsApp for ${contact.name} - popup blocked?`);
+        alert(`⚠️ Cannot open WhatsApp for ${contact.name}. Please check browser popup settings.`);
+      } else {
+        console.log(`✅ SOS with location sent to ${contact.name} (${contact.phone})`);
       }
-    }, index * 200); // Reduced to 200ms for faster simultaneous sending
+    } catch (err) {
+      console.error(`❌ Error sending to ${contact.name}:`, err);
+    }
   });
 
   statusEl.textContent = `✅ SOS with location sent to ${contacts.length} contact(s) via WhatsApp!`;
