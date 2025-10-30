@@ -186,7 +186,7 @@ export function startSOSCountdown() {
     if (count <= 0) {
       clearInterval(countdownTimer);
       modal.classList.remove("active");
-      sendWhatsAppSOS();
+      sendWhatsAppSOS(null); // Pass null for manual trigger (no shake intensity)
     }
   }, 1000);
 }
@@ -281,15 +281,28 @@ export async function sendWhatsAppSOS(shakeIntensity = null) {
   // Send to all emergency contacts via WhatsApp simultaneously
   const encodedMessage = encodeURIComponent(message);
   
+  console.log(`📤 Preparing to send SOS to ${contacts.length} contact(s)...`);
+  console.log("Contacts:", contacts);
+  
   statusEl.textContent = `📤 Sending SOS to ${contacts.length} contact(s) with your location...`;
   
   // Send to all contacts at the same time with minimal delay
   contacts.forEach((contact, index) => {
     setTimeout(() => {
-      const phoneNumber = contact.phone.replace(/[^0-9]/g, "");
-      const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-      window.open(whatsappURL, "_blank");
-      console.log(`✅ SOS with location sent to ${contact.name} (${contact.phone})`);
+      try {
+        const phoneNumber = contact.phone.replace(/[^0-9]/g, "");
+        const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+        console.log(`Opening WhatsApp for ${contact.name}: ${whatsappURL}`);
+        const newWindow = window.open(whatsappURL, "_blank");
+        if (!newWindow) {
+          console.error(`❌ Failed to open WhatsApp for ${contact.name} - popup blocked?`);
+          alert(`⚠️ Cannot open WhatsApp for ${contact.name}. Please check browser popup settings.`);
+        } else {
+          console.log(`✅ SOS with location sent to ${contact.name} (${contact.phone})`);
+        }
+      } catch (err) {
+        console.error(`❌ Error sending to ${contact.name}:`, err);
+      }
     }, index * 200); // Reduced to 200ms for faster simultaneous sending
   });
 
