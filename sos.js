@@ -310,6 +310,29 @@ export async function sendWhatsAppSOS(shakeIntensity = null) {
   setTimeout(() => {
     alert(`🚨 Emergency SOS sent to ${contacts.length} contact(s)!\n\n📍 Location included in all messages\n\nContacts notified:\n${contacts.map(c => `• ${c.name}`).join('\n')}`);
   }, 500);
+
+  // Show fallback WhatsApp links modal after sending
+  const linksModal = document.getElementById("whatsappLinksModal");
+  const linksList = document.getElementById("whatsappLinksList");
+  if (linksModal && linksList) {
+    // Fill the list with clickable WhatsApp URLs
+    linksList.innerHTML = contacts.map(contact => {
+      const phoneNumber = contact.phone.replace(/[^0-9]/g, "");
+      const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+      return `<a href=\"${whatsappURL}\" target=\"_blank\" style=\"color:white;text-decoration:underline;display:block;margin:9px 0;word-break:break-all;font-size:16px;\">${contact.name || contact.phone}</a>`;
+    }).join("");
+    // Show the modal
+    linksModal.classList.add("active");
+    linksModal.classList.remove("hidden");
+  }
+  // Add close handler
+  const closeLinksModal = document.getElementById("closeLinksModal");
+  if (closeLinksModal && linksModal) {
+    closeLinksModal.onclick = () => {
+      linksModal.classList.remove("active");
+      linksModal.classList.add("hidden");
+    };
+  }
 }
 
 // Initialize
