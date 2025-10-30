@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import cors from "cors";
 import { fileURLToPath } from "url";
+import multer from "multer";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,19 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname)); // serves index.html, shake.js, sos.js
+
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.webm';
+    cb(null, `recording-${Date.now()}${ext}`);
+  },
+});
+const upload = multer({ storage });
 
 const sosFile = path.join(__dirname, "sos_log.json");
 const shakeIntensityFile = path.join(__dirname, "shake_intensity_log.json");
@@ -85,6 +99,11 @@ app.get("/download-shake-intensity", (req, res) => {
     return res.status(404).json({ error: "No shake intensity logs found" });
   }
   res.download(shakeIntensityFile, "shake_intensity_log.json");
+});
+
+app.post("/upload", upload.single("media"), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  res.json({ status: "success", filename: req.file.filename, path: req.file.path });
 });
 
 app.listen(PORT, () => {
