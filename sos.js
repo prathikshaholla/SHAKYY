@@ -260,7 +260,7 @@ export async function sendWhatsAppSOS(shakeIntensity = null) {
 
   // Log to server
   try {
-    await fetch("http://localhost:3000/sos", {
+    await fetch("/sos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -275,7 +275,7 @@ export async function sendWhatsAppSOS(shakeIntensity = null) {
     });
     console.log("✅ SOS logged on server");
   } catch (err) {
-    console.error("❌ Failed to send to server:", err);
+    console.error("❌ Failed to send to server:", err?.message || err);
   }
 
   // Send to all emergency contacts via WhatsApp simultaneously

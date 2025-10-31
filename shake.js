@@ -50,10 +50,10 @@ function initShakeDetection() {
   statusEl.textContent = "✅ Motion sensors active. Shake to trigger SOS.";
 }
 
-// Log shake intensity to server
+// Log shake intensity to server (relative path works in dev/prod)
 async function logShakeIntensity(intensity, x, y, z) {
   try {
-    await fetch("http://localhost:3000/shake-intensity", {
+    await fetch("/shake-intensity", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -63,8 +63,8 @@ async function logShakeIntensity(intensity, x, y, z) {
       }),
     });
   } catch (err) {
-    // Silently fail for continuous logging
-    console.log("Shake intensity logged");
+    // Silently fail for continuous logging (network may be down)
+    console.debug("shake log failed:", err?.message || err);
   }
 }
 

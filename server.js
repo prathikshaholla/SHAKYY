@@ -13,7 +13,21 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname)); // serves index.html, shake.js, sos.js
+
+// Serve client build if present (client built with Vite -> client/dist)
+const clientDist = path.join(__dirname, 'client', 'dist');
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  // SPA fallback to index.html
+  app.get('*', (req, res, next) => {
+    // Only handle non-API requests here
+    if (req.path.startsWith('/api') || req.path.startsWith('/download-') || req.path.startsWith('/shake-intensity') || req.path.startsWith('/sos') || req.path.startsWith('/upload')) return next();
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+} else {
+  // Fallback: serve the repo root (legacy static html files)
+  app.use(express.static(__dirname)); // serves index.html, shake.js, sos.js
+}
 
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
@@ -99,6 +113,19 @@ app.get("/download-shake-intensity", (req, res) => {
     return res.status(404).json({ error: "No shake intensity logs found" });
   }
   res.download(shakeIntensityFile, "shake_intensity_log.json");
+});
+
+// API endpoints to read logs (simple JSON responses)
+app.get('/api/sos', (req, res) => {
+  if (!fs.existsSync(sosFile)) return res.json([]);
+  const data = JSON.parse(fs.readFileSync(sosFile, 'utf8'));
+  res.json(data);
+});
+
+app.get('/api/shake-intensity', (req, res) => {
+  if (!fs.existsSync(shakeIntensityFile)) return res.json([]);
+  const data = JSON.parse(fs.readFileSync(shakeIntensityFile, 'utf8'));
+  res.json(data);
 });
 
 app.post("/upload", upload.single("media"), (req, res) => {

@@ -40,3 +40,27 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Admin styles */
+.admin-card {
+  background: rgba(0,0,0,0.04);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.btn-small {
+  background: #2b8a3e;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+.btn-small:hover { opacity: 0.95; }
+.muted { color: #666; padding: 8px 0; }
+.log-list { display: flex; flex-direction: column; gap: 8px; }
+.log-item { background: rgba(0,0,0,0.03); padding: 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.04); }
+.log-meta { font-size: 12px; color: #444; margin-bottom: 6px; }
+.log-pre { background: #fafafa; padding: 8px; border-radius: 6px; overflow: auto; font-size: 12px; }
